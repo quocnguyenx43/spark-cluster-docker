@@ -1,0 +1,4 @@
+# Changed
+# A Spark Worker will be started on each of the machines listed below.
+spark-worker-01
+spark-worker-02

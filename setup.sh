@@ -311,8 +311,14 @@ else
   echo "Starting Spark Worker Node..."
 
   worker_wait_for_master_with_retry
+
+  # Start Hadoop
+  $HADOOP_HOME/bin/hdfs namenode -format
+  $HADOOP_HOME/sbin/hadoop-daemon.sh start datanode
+  $HADOOP_HOME/sbin/yarn-daemon.sh start nodemanager
+  echo "Hadoop started."
   
-  # Start
+  # Start Spark
   $SPARK_HOME/sbin/start-worker.sh spark://$SPARK_MASTER_IP:7077
   echo "Spark Worker started and connected to Master at spark://$SPARK_MASTER_IP:7077"
 fi
