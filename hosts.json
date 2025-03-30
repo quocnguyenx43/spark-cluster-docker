@@ -1,14 +1,14 @@
 {
   "spark-master": {
     "user": "workspace",
-    "ip": "10.5.5.2"
+    "ip": "192.0.0.2"
   },
   "spark-worker-01": {
     "user": "workspace",
-    "ip": "10.5.5.3"
+    "ip": "192.0.0.3"
   },
   "spark-worker-02": {
     "user": "workspace",
-    "ip": "10.5.5.4"
+    "ip": "192.0.0.4"
   }
 }

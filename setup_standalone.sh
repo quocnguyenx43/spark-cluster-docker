@@ -18,7 +18,7 @@ if [[ "$NODE" != "master" && "$NODE" != "worker" ]]; then
   exit 1
 fi
 
-# Spark cluster hosts
+# Cluster hosts
 JSON_FILE="hosts.json"
 
 if [ ! -f "$JSON_FILE" ]; then
@@ -138,50 +138,8 @@ add_env_to_bashrc_if_missing "PATH.*coursier" "export PATH="\$PATH:\$HOME/.local
 sudo ln -sf $HOME/.local/bin/uv /usr/bin/uv
 sudo ln -sf $HOME/.local/bin/uvx /usr/bin/uvx
 
-# Hadoop
-HADOOP_MAJOR_VERSION="3"
-HADOOP_VERSION="3.4.1"
-HADOOP_TGZ="hadoop-$HADOOP_VERSION.tar.gz"
-HADOOP_URL="https://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
-HADOOP_DIR="$INSTALL_PARENT_DIR/hadoop"
-HADOOP_HOME="$HADOOP_DIR/hadoop-$HADOOP_VERSION"
-HADOOP_CONF_DIR="$HADOOP_HOME/etc/hadoop"
-YARN_CONF_DIR="$HADOOP_HOME/etc/hadoop"
-
-if [ ! -d "$HADOOP_HOME" ]; then
-  echo "Downloading & installing Hadoop $HADOOP_VERSION..."
-  # wget --show-progress "$HADOOP_URL"
-  # sudo mkdir -p "$HADOOP_DIR"
-  # sudo tar -xzf "./$HADOOP_TGZ" -C "$HADOOP_DIR"
-  sudo chmod u+x $HADOOP_HOME/sbin* && sudo chmod u+x $HADOOP_HOME/bin*
-  sudo rm "$HADOOP_TGZ"
-else
-  echo "Hadoop already installed at $HADOOP_HOME"
-fi
-
-add_env_to_bashrc_if_missing "HADOOP_HOME" "export HADOOP_HOME=$HADOOP_HOME"
-add_env_to_bashrc_if_missing "HADOOP_CONF_DIR" "export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop"
-add_env_to_bashrc_if_missing "PATH.*HADOOP_HOME" "export PATH=\$PATH:\$HADOOP_HOME/bin:\$HADOOP_HOME/sbin"
-add_env_to_bashrc_if_missing "LD_LIBRARY_PATH" "export LD_LIBRARY_PATH=\$HADOOP_HOME/lib/native:\$LD_LIBRARY_PATH"
-
-add_env_to_bashrc_if_missing "HDFS_NAMENODE_USER" "export HDFS_NAMENODE_USER=workspace"
-add_env_to_bashrc_if_missing "HDFS_DATANODE_USER" "export HDFS_DATANODE_USER=workspace"
-add_env_to_bashrc_if_missing "HDFS_SECONDARYNAMENODE_USER" "export HDFS_SECONDARYNAMENODE_USER=workspace"
-
-add_env_to_bashrc_if_missing "YARN_CONF_DIR" "export YARN_CONF_DIR=$YARN_CONF_DIR"
-add_env_to_bashrc_if_missing "YARN_RESOURCEMANAGER_USER" "export YARN_RESOURCEMANAGER_USER=workspace"
-add_env_to_bashrc_if_missing "YARN_NODEMANAGER_USER" "export YARN_NODEMANAGER_USER=workspace"
-
-echo "export JAVA_HOME=$JAVA_HOME" | sudo tee -a "$HADOOP_CONF_DIR/hadoop-env.sh" > /dev/null
-
-source ~/.bashrc
-
-# Hadoop conf
-sudo cp -R ./conf/hadoop/*.xml "$HADOOP_CONF_DIR/"
-
-sudo chown -R workspace:workspace /opt/hadoop
-
 # Spark
+HADOOP_MAJOR_VERSION="3"
 SPARK_VERSION="3.5.4"
 SPARK_TGZ="spark-$SPARK_VERSION-bin-hadoop$HADOOP_MAJOR_VERSION-scala$SCALA_VERSION.tgz"
 SPARK_URL="https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/$SPARK_TGZ"
@@ -201,7 +159,7 @@ else
 fi
 
 add_env_to_bashrc_if_missing "SPARK_HOME" "export SPARK_HOME=$SPARK_HOME"
-add_env_to_bashrc_if_missing "SPARK_CONF_DIR" "export SPARK_HOME=\$SPARK_HOME/conf"
+add_env_to_bashrc_if_missing "SPARK_CONF_DIR" "export SPARK_CONF_DIR=\$SPARK_HOME/conf"
 add_env_to_bashrc_if_missing "SPARK_MASTER" "export SPARK_MASTER=spark://$SPARK_MASTER_IP:7077"
 add_env_to_bashrc_if_missing "SPARK_MASTER_HOST" "export SPARK_MASTER_HOST=$SPARK_MASTER_IP"
 add_env_to_bashrc_if_missing "SPARK_MASTER_PORT" "export SPARK_MASTER_PORT=7077"
@@ -260,17 +218,9 @@ worker_wait_for_master_with_retry() {
 # Start SSH
 sudo service ssh start
 
-# Create data folder for Hadoop
-mkdir -p $HADOOP_HOME/nameNode
-rm -rf $HADOOP_HOME/nameNode/*
-mkdir -p $HADOOP_HOME/dataNode
-rm -rf $HADOOP_HOME/dataNode/*
-mkdir -p $HADOOP_HOME/secondaryNameNode
-rm -rf $HADOOP_HOME/secondaryNameNode/*
-
 # Create event log folder for Spark
-mkdir -p $SPARK_HOME/spark-events
-rm -rf $HADOOP_HOME/spark-events/*
+mkdir -p $SPARK_HOME/spark-event-logs
+rm -rf $SPARK_HOME/spark-event-logs/*
 
 # Start Spark
 if [ "$NODE" == "master" ]; then
@@ -294,39 +244,25 @@ if [ "$NODE" == "master" ]; then
 
   echo "SSH key copied to all worker nodes successfully!"
 
-  # Start Hadoop
-  $HADOOP_HOME/bin/hdfs namenode -format
-  # namenode, datanode, secondarynamenode, resourcemanager, nodemanager
-  $HADOOP_HOME/sbin/start-all.sh
-  echo "Hadoop started."
-
   # Start Spark
   $SPARK_HOME/sbin/start-master.sh
-  echo "Spark Master started."
-  echo "Spark Master URL: http://$(hostname -I | awk '{print $1}'):8080"
   $SPARK_HOME/sbin/start-history-server.sh
-  echo "Spark History Server started."
-  echo "Spark History Server URL: http://$(hostname -I | awk '{print $1}'):18080"
+  echo "Spark Master started! URL: http://$(hostname -I | awk '{print $1}'):8080"
+  echo "Spark History Server started! URL: http://$(hostname -I | awk '{print $1}'):18080"
 else
   echo "Starting Spark Worker Node..."
-
-  worker_wait_for_master_with_retry
-
-  # Start Hadoop
-  $HADOOP_HOME/bin/hdfs namenode -format
-  $HADOOP_HOME/sbin/hadoop-daemon.sh start datanode
-  $HADOOP_HOME/sbin/yarn-daemon.sh start nodemanager
-  echo "Hadoop started."
   
   # Start Spark
+  worker_wait_for_master_with_retry
   $SPARK_HOME/sbin/start-worker.sh spark://$SPARK_MASTER_IP:7077
   echo "Spark Worker started and connected to Master at spark://$SPARK_MASTER_IP:7077"
 fi
 
-# Clear
-sudo rm -rf "$SPARK_TGZ"
-sudo rm -rf "$HADOOP_TGZ"
-sudo rm -f "./cs"
+# Clean up
+mkdir -p resources
+mv *.tar resources
+mv *.tar.gz resources
+mv ./cs resources
 
 echo "Setup completed successfully."
 exit 0

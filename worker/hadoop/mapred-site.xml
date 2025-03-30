@@ -1,8 +1,9 @@
-<!-- Changed -->
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
 
+  <!-- Empty -->
+  
   <property>
     <name>mapreduce.framework.name</name>
     <value>yarn</value>

@@ -3,44 +3,47 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 10.0.0.0/8
+        - subnet: 192.0.0.0/24
 
 services:
   ubuntu1:
     image: ubuntu-spark
     container_name: ubuntu1
     volumes:
-      - ./setup.sh:/home/workspace/setup.sh
+      - ./setup_standalone.sh:/home/workspace/setup_standalone.sh
+      - ./setup_yarn.sh:/home/workspace/setup_yarn.sh
       - ./hosts.json:/home/workspace/hosts.json
       - ./ssh:/home/workspace/ssh
       - ./master:/home/workspace/conf
     command: tail -f /dev/null
     networks:
       spark_network:
-        ipv4_address: 10.5.5.2
+        ipv4_address: 192.0.0.2
 
   ubuntu2:
     image: ubuntu-spark
     container_name: ubuntu2
     volumes:
-      - ./setup.sh:/home/workspace/setup.sh
+      - ./setup_standalone.sh:/home/workspace/setup_standalone.sh
+      - ./setup_yarn.sh:/home/workspace/setup_yarn.sh
       - ./hosts.json:/home/workspace/hosts.json
       - ./ssh:/home/workspace/ssh
       - ./worker:/home/workspace/conf
     command: tail -f /dev/null
     networks:
       spark_network:
-        ipv4_address: 10.5.5.3
+        ipv4_address: 192.0.0.3
 
   ubuntu3:
     image: ubuntu-spark
     container_name: ubuntu3
     volumes:
-      - ./setup.sh:/home/workspace/setup.sh
+      - ./setup_standalone.sh:/home/workspace/setup_standalone.sh
+      - ./setup_yarn.sh:/home/workspace/setup_yarn.sh
       - ./hosts.json:/home/workspace/hosts.json
       - ./ssh:/home/workspace/ssh
       - ./worker:/home/workspace/conf
     command: tail -f /dev/null
     networks:
       spark_network:
-        ipv4_address: 10.5.5.4
+        ipv4_address: 192.0.0.4

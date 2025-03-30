@@ -1,7 +1,8 @@
-<!-- Changed -->
 <?xml version="1.0"?>
 <configuration>
 
+  <!-- Empty -->
+  
   <property>
     <name>yarn.acl.enable</name>
     <value>false</value>
