@@ -1,0 +1,2 @@
+- hadoop-3.4.1.tar.gz
+- spark-3.5.4-bin-hadoop3-scala2.13.tgz

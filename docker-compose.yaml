@@ -1,0 +1,46 @@
+networks:
+  spark_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/8
+
+services:
+  ubuntu1:
+    image: ubuntu-spark
+    container_name: ubuntu1
+    volumes:
+      - ./setup.sh:/home/workspace/setup.sh
+      - ./hosts.json:/home/workspace/hosts.json
+      - ./ssh:/home/workspace/ssh
+      - ./master:/home/workspace/conf
+    command: tail -f /dev/null
+    networks:
+      spark_network:
+        ipv4_address: 10.5.5.2
+
+  ubuntu2:
+    image: ubuntu-spark
+    container_name: ubuntu2
+    volumes:
+      - ./setup.sh:/home/workspace/setup.sh
+      - ./hosts.json:/home/workspace/hosts.json
+      - ./ssh:/home/workspace/ssh
+      - ./worker:/home/workspace/conf
+    command: tail -f /dev/null
+    networks:
+      spark_network:
+        ipv4_address: 10.5.5.3
+
+  ubuntu3:
+    image: ubuntu-spark
+    container_name: ubuntu3
+    volumes:
+      - ./setup.sh:/home/workspace/setup.sh
+      - ./hosts.json:/home/workspace/hosts.json
+      - ./ssh:/home/workspace/ssh
+      - ./worker:/home/workspace/conf
+    command: tail -f /dev/null
+    networks:
+      spark_network:
+        ipv4_address: 10.5.5.4
